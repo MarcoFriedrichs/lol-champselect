@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const request = require('request')
 const LCUConnector = require('lcu-connector');
 const connector = new LCUConnector();
 const events = require('events');
@@ -15,12 +16,13 @@ connector.on('connect', (lcu) => {
     console.log('connect');
 
     const ws = new WebSocket(`wss://${lcu.username}:${lcu.password}@${lcu.address}:${lcu.port}/`, 'wamp');
-    // const url = `${lcu.protocol}://${lcu.username}:${lcu.password}@${lcu.address}:${lcu.port}`
+    const url = `${lcu.protocol}://${lcu.username}:${lcu.password}@${lcu.address}:${lcu.port}`
 
     let timerInterval;
     let initState = false;
 
     const data = { timer: undefined };
+
     function gameflowClearInterval(msg) {
         this.phase = msg.data;
         if (this.phase !== 'ChampSelect') {
@@ -51,14 +53,57 @@ connector.on('connect', (lcu) => {
         startTimer(adjustedTimeLeftInPhase, internalNowInEpochMs);
     }
 
-    function initChampSelect(msg) {
+    async function initChampSelect(msg) {
+        var initData = {};
+
         if (msg.eventType === 'Create') {
             initState = true;
         }
         
         if (initState === true && (msg.data.myTeam.length !== 0) || (msg.data.theirTeam.length !== 0)) {
-            module.exports.emit('message', { type: 'create', timestamp: Date.now() });
+            module.exports.emit('message', { type: 'create', timestamp: Date.now(), data: await structureData(msg.data) });
             initState = false
+        }
+
+        function structureData(data) {
+            return new Promise(resolve => {
+                (async () => {
+                    
+                    console.log("struc")
+                    
+                    resolve({
+                        numBans: data.bans.numBans,
+                        isSpectating: data.isSpectating,
+                        teamBlue: await getTeamSummonerNames(data.myTeam),
+                        teamRed: await getTeamSummonerNames(data.theirTeam)
+                    })
+                    
+                    function getTeamSummonerNames(team) {
+                        console.log("team")
+                        return new Promise(resolve => {
+                            let summoners = [];
+                            
+                            if(team.length > 0) {
+                                team.forEach(e => {
+                                    console.log(e)
+                                    request(url + "/lol-summoner/v1/summoners/" + e.summonerId, (err, res, body) => {
+                                        summoners.push(JSON.parse(body))
+                                        
+                                        if (summoners.length == team.length) {
+                                            resolve(summoners)
+                                            console.log(summoners)
+                                        }
+                                    })
+                                });
+                            }
+                            else {
+                                resolve([])
+                            }
+                        })
+
+                    }
+                })()
+            })
         }
     }
 
@@ -80,12 +125,12 @@ connector.on('connect', (lcu) => {
             this.adjustedTimeLeftInPhase = this.message.data.timer.adjustedTimeLeftInPhase;
             this.internalNowInEpochMs = this.message.data.timer.internalNowInEpochMs;
 
-            this.emitEventData = this.message.eventType === 'Delete' ? { type: 'delete', timestamp: Date.now() }
-                : this.message.eventType === 'Update' ? { type: 'update', timestamp: Date.now(), data: this.message.data.myTeam }
-                    : 'idk';
-
-
-            module.exports.emit('message', this.emitEventData);
+            if (this.message.eventType === 'Delete') {
+                module.exports.emit('message', { type: 'delete', timestamp: Date.now() })
+            }
+            else if (this.message.eventType === 'Update') {
+                module.exports.emit('message', { type: 'update', timestamp: Date.now(), data: this.message.data })
+            }
 
             resetTimer(this.adjustedTimeLeftInPhase, this.internalNowInEpochMs);
         }
