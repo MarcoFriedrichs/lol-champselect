@@ -1,6 +1,6 @@
 {
-  "name": "champ-select-ding",
-  "version": "1.0.0",
+  "name": "lol-champselect",
+  "version": "0.1.1",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -17,6 +17,10 @@
     "test": "node timer.js",
     "start": "node index.js"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Marco Friedrichs",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MarcoFriedrichs/lcu-champ-select.git"
+  }
 }
