@@ -54,7 +54,6 @@ connector.on('connect', (lcu) => {
     }
 
     async function initChampSelect(msg) {
-        var initData = {};
 
         if (msg.eventType === 'Create') {
             initState = true;
@@ -68,8 +67,6 @@ connector.on('connect', (lcu) => {
         function structureData(data) {
             return new Promise(resolve => {
                 (async () => {
-                    
-                    console.log("struc")
                     
                     resolve({
                         numBans: data.bans.numBans,
@@ -85,15 +82,17 @@ connector.on('connect', (lcu) => {
                             
                             if(team.length > 0) {
                                 team.forEach(e => {
-                                    console.log(e)
-                                    request(url + "/lol-summoner/v1/summoners/" + e.summonerId, (err, res, body) => {
-                                        summoners.push(JSON.parse(body))
-                                        
-                                        if (summoners.length == team.length) {
-                                            resolve(summoners)
-                                            console.log(summoners)
-                                        }
-                                    })
+                                    //console.log(e)
+                                    if(e.playerType === "PLAYER") {
+                                        request(url + "/lol-summoner/v1/summoners/" + e.summonerId, (err, res, body) => {
+                                            summoners.push(JSON.parse(body))
+                                            
+                                            if (summoners.length == team.length) {
+                                                resolve(summoners)
+                                                console.log(summoners)
+                                            }
+                                        })
+                                    }
                                 });
                             }
                             else {
