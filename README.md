@@ -2,7 +2,7 @@
 
 Example:
 ```
-const champselect = require('./index.js')
+const champselect = require('lol-champselect')
 
 champselect.on('timer', data => {
     //console.log(data)
