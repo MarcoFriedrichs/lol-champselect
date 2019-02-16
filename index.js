@@ -40,7 +40,7 @@ connector.on('connect', (lcu) => {
     function startTimer(adjustedTimeLeftInPhase, internalNowInEpochMs) {
         timerInterval = setInterval(() => {
             this.timer = getTimer(adjustedTimeLeftInPhase, internalNowInEpochMs);
-            if (this.timer !== data.timer) {
+            if (this.timer !== data.timer && this.timer >= 0) {
                 data.timer = this.timer;
                 module.exports.emit('timer', data);
                 module.exports.emit('message', { type: 'timer', timer: data });
